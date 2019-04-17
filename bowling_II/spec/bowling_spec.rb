@@ -27,20 +27,11 @@ describe 'Bowling tests' do
     expect(game1.score).to eq 90
   end
 
-  it 'calculate game score if frames are numbers' do
-    game1 = Game.new(sequence)
-
-    expect(game1.score).to eq 90
-  end
-
   it 'frame score with a spare' do
     first_frame = Frame.new("1/")
 
     expect(first_frame.score).to eq 10
   end
-
-
-
 end
 
 class Frame
