@@ -68,11 +68,9 @@ describe 'Bowling' do
   it 'a strike in the first and second frame , add the bonus of each else' do
     sequence = 'X X 11 11 11 11 11 11 11 11'
     score=compute_score(sequence)
-    expect(score).to eq 69
+    expect(score).to eq 68
   end
 end
-
-
 
 def compute_score(sequence)
   score = 0
@@ -84,88 +82,96 @@ def compute_score(sequence)
   score
 end
 
-
-
 def compute_frame_score(frames, index, is_bonus)
   result = 0
-  next_frame = get_next_frame(frames, index)
-  next_roll = get_next_roll(next_frame)
   actual_frame = frames[index]
-  spared = scores_spared_roll(actual_frame, next_roll, is_bonus)
-  result += spared
 
-  strike = scores_strike_roll(frames, index,is_bonus)
-  result += strike
+  if frame_is_a_bonus?(frames,index)
 
-  if spared == 0 && strike == 0
-    result += frame_points(actual_frame)
+    if frame_is_a_spare?(frames[index])
+      result += score_of_spare(frames, index)
+    end
+
+    if frame_is_a_strike?(frames,index)
+      result += score_of_strike(frames, index)
+    end
+
+  else
+      result += frame_points(actual_frame)
   end
-
 
   result
 end
 
 def frame_points(frame)
   score = 0
-  frame.split('').each do |roll|
-    score += normal_roll(roll)
+  if frame[0].match?(/[0-9]/)
+    score += frame[0].to_i
+  end
+  if frame[1].match?(/[0-9]/)
+    score += frame[1].to_i
   end
   score
 end
 
-def get_next_roll(next_frame)
-  next_roll = next_frame[0]
-  next_roll
-end
-
-def get_next_frame(frames, index)
-  next_frame = frames[index + 1] || []
-  next_frame
-end
-
-
-
-def normal_roll(pins_down)
-  if pins_down.match?(/[0-9]/)
-    return pins_down.to_i
+def bonus_next_roll(frames, index)
+  bonus_score = 0
+  next_roll = frames[index + 1][0]
+  if next_roll.match?(/[0-9]/)
+    bonus_score = next_roll.to_i
   end
-  return 0
+  return bonus_score
 end
 
-def scores_spared_roll(frame, next_roll, is_bonus)
-  score = 0
-  if frame_is_a_spare?(frame)
-    score = 10
-    score += normal_roll(next_roll) unless is_bonus
-  end
+def score_of_spare(frames, index)
+  score = 10
+  score += bonus_next_roll(frames ,index)
   score
 end
 
-def scores_strike_roll(frames, index,is_bonus)
-  bonus_frame_is_a_strike = is_bonus && frame_is_a_strike?(frames,index)
-  return bonus_of_strike(frames, index) if bonus_frame_is_a_strike
-  score = 0
-  if frame_is_a_strike?(frames,index)
-    is_bonus = true
-    score = 20
-    next_frame_index = index + 1
-    next_frame = get_next_frame(frames, index)
-    score += compute_frame_score(frames, next_frame_index, is_bonus)
-  end
+def score_of_strike(frames, index)
+  score = 20
+  score += bonus_next_two_rolls(frames, index)
   score
 end
 
 def bonus_of_strike(frames, index)
   score = 0
   score += 10
-  score += normal_roll(frames[index + 1][0])
+  if frames[index + 1][0].match?(/[0-9]/)
+    score += frame[1].to_i
+  end
   score
 end
 
+def bonus_next_two_rolls(frames, index)
+  bonus_score = 0
+  next_frame_index = index + 1
+  if frame_is_a_spare?(frames[next_frame_index])
+    bonus_score += 10
+  end
+  if frame_is_a_strike?(frames, next_frame_index)
+    bonus_score += 10
+  end
+  unless frame_is_a_bonus?(frames, next_frame_index)
+    next_frame = frames[next_frame_index]
+    next_frame.each_char do |roll|
+      if roll.match?(/[0-9]/)
+        bonus_score += roll.to_i
+      end
+    end
+  end
+  return bonus_score
+end
+
 def frame_is_a_strike?(frames,index)
-    frames[index].include? 'X'
+  frames[index].include? 'X'
 end
 
 def frame_is_a_spare?(frame)
-    frame.include? '/'
+  frame.include? '/'
+end
+
+def frame_is_a_bonus?(frames,index)
+  frame_is_a_strike?(frames,index) || frame_is_a_spare?(frames[index])
 end
